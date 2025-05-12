@@ -13,6 +13,7 @@ TailType = tuple[Union[bytes, int], ...]
 
 class Inverse(NamedTuple):
     address: int
+    block_item_index: int
     dna_type_id: bytes
     path: TailType
 
@@ -56,7 +57,7 @@ class BlendFileInverses:
                 value = block.get(tail_, block_item_index=block_item_index)
                 if not value:
                     continue
-                self.inverses[value].add(Inverse(block.addr_old, block.dna_type_id, tail_))
+                self.inverses[value].add(Inverse(block.addr_old, block_item_index, block.dna_type_id, tail_))
             elif fields:
                 for field_ in fields:
                     self.check_block_field(block, block_item_index, field_, tail_)
