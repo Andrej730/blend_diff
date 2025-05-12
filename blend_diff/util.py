@@ -43,18 +43,25 @@ class BlendFileInverses:
 
         field_name = field.name.name_only
         tail = tail + (field_name,)
-        if is_pointer:
-            value = block.get(tail, block_item_index=block_item_index)
-            if not value:
-                return
-            self.inverses[value].add(Inverse(block.addr_old, block.dna_type_id, tail))
-        elif fields:
-            for array_item_index in range(field.name.array_size):
+        single_item = field.name.array_size == 1
+        for array_item_index in range(field.name.array_size):
+            # Just to keep tails more readable.
+            if single_item:
+                tail_ = tail
+            else:
                 tail_ = tail + (array_item_index,)
+
+            if is_pointer:
+                # Ensure to check is_pointer first, as it also has fields.
+                value = block.get(tail_, block_item_index=block_item_index)
+                if not value:
+                    continue
+                self.inverses[value].add(Inverse(block.addr_old, block.dna_type_id, tail_))
+            elif fields:
                 for field_ in fields:
                     self.check_block_field(block, block_item_index, field_, tail_)
-        else:
-            assert False
+            else:
+                assert False
 
     def check_inverses(self):
         """Build inverses mapping and print stats on orphaned data."""
