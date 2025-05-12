@@ -109,3 +109,8 @@ class BlendFileInverses:
 
         orphaned = [b for b in bf.blocks if len(inverses[b.addr_old]) == 0]
         print(f"Orphaned file-blocks: {len(orphaned)}.")
+
+        # Pointers without file-blocks.
+        homeless_addresses = [p for p in inverses if p not in bf.block_from_addr]
+        homeless_references = sum(len(inverses[p]) for p in homeless_addresses)
+        print(f"Homeless addresses: {len(homeless_addresses)} ({homeless_references} references).")
