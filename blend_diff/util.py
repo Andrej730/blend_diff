@@ -114,3 +114,19 @@ class BlendFileInverses:
         homeless_addresses = [p for p in inverses if p not in bf.block_from_addr]
         homeless_references = sum(len(inverses[p]) for p in homeless_addresses)
         print(f"Homeless addresses: {len(homeless_addresses)} ({homeless_references} references).")
+
+        # Odd file-block addresses.
+        print("File-block addresses validation...")
+        used_addresses: dict[int, blendfile.BlendFileBlock] = {}
+        for block in bf.blocks:
+            address = block.addr_old
+            if address <= 0:
+                print(f"{block} has an odd address.")
+                continue
+
+            # Oddly enough, `REND` and `GLOB` file-blocks share the same address in startup.blend.
+            if address in used_addresses:
+                print(f"{block} address is already used in block: {used_addresses[address]}.")
+                continue
+
+            used_addresses[address] = block
