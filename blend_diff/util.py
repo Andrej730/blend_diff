@@ -29,6 +29,7 @@ class BlendFileInverses:
     def __init__(self, bf: blendfile.BlendFile):
         self.bf = bf
         self.inverses = defaultdict(set)
+        self.homeless_addresses: list[int] = []
 
     def check_block_field(
         self,
@@ -112,6 +113,7 @@ class BlendFileInverses:
 
         # Pointers without file-blocks.
         homeless_addresses = [p for p in inverses if p not in bf.block_from_addr]
+        self.homeless_addresses = homeless_addresses
         homeless_references = sum(len(inverses[p]) for p in homeless_addresses)
         print(f"Homeless addresses: {len(homeless_addresses)} ({homeless_references} references).")
 
@@ -130,3 +132,37 @@ class BlendFileInverses:
                 continue
 
             used_addresses[address] = block
+
+
+class BlendPatch:
+    @staticmethod
+    def nullify_homeless_addresses(bf_inverses: BlendFileInverses) -> None:
+        """Nullify all addresses that don't point to some file-block.
+
+        In theory since they do not point anywhere,
+        we might be able to remove them to reduce the diff
+        and get away with it.
+
+        It can be dangerous if Blender is checking if pointers are not null
+        or comparing them between each other to figure the identities.
+
+        But no idea if Blender actually does that
+        and no idea how safe this operation actually is.
+
+        Though I've tested patching simple files (400 references)
+        and they reopen without issues, so they don't break
+        (at least not right away).
+
+        Even if it's unsafe, it's still can be useful to nullify files before diff.
+        """
+        inverses = bf_inverses.inverses
+        bf = bf_inverses.bf
+
+        i = 0
+        for addr in bf_inverses.homeless_addresses:
+            inverses_ = inverses[addr]
+            for inverse_ in inverses_:
+                block = bf.block_from_addr[inverse_.address]
+                block.set(inverse_.path, block_item_index=inverse_.block_item_index, value=0)
+                i += 1
+        print(f"{i} homeless address references nullified.")
