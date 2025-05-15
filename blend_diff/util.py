@@ -95,6 +95,7 @@ class BlendFileInverses:
         bf.fileobj.seek(tell)
 
         # Print orphaned data.
+        print("Orphaned data:")
         for block in bf.blocks:
             inverses_ = inverses[block.addr_old]
             if len(inverses_) > 0:
@@ -118,6 +119,8 @@ class BlendFileInverses:
             )
 
         orphaned = [b for b in bf.blocks if len(inverses[b.addr_old]) == 0]
+        if not orphaned:
+            print("... no orphaned data.")
         print(f"Orphaned file-blocks: {len(orphaned)}.")
 
         # Pointers without file-blocks.
