@@ -76,6 +76,14 @@ class BlendFileInverses:
         inverses.clear()
 
         for block in blocks:
+            # Skip `raw_data` structs by 0 index. 
+            # Use index as `raw_data` struct was introduced relatively recently,
+            # but 0 index was used for it for awhile.
+            # In theory we can overlook some DrawDataLists in older Blender versions,
+            # but it's better than just being completely unsafe.
+            # https://projects.blender.org/blender/blender/issues/99875
+            if block.sdna_index == 0:
+                continue
             for i in range(block.count):
                 for field in block.dna_type.fields:
                     self.check_block_field(block, i, field)
