@@ -3,6 +3,7 @@ import argparse
 from functools import cache
 from pathlib import Path
 from blender_asset_tracer import blendfile
+from . import util
 
 
 def format_diff(lines: list[str]) -> None:
@@ -24,14 +25,8 @@ def format_diff(lines: list[str]) -> None:
 def get_id_data(path: Path) -> list[str]:
     bf_base = blendfile.BlendFile(path)
 
-    @cache
-    def is_id_block(bf: blendfile.BlendFile, sdna_index: int) -> bool:
-        field = bf.structs[sdna_index]._fields_by_name.get(b"id", None)
-        if field is None:
-            return False
-        return field.dna_type.dna_type_id == b"ID"
-
-    id_file_blocks = [b for b in bf_base.blocks if is_id_block(bf_base, b.sdna_index)]
+    is_id_block_ = cache(util.is_id_block)
+    id_file_blocks = [b for b in bf_base.blocks if is_id_block_(bf_base, b.sdna_index)]
 
     # Keep the original order as blocks order is probably stable
     # and if it changes, it has a meaning too.

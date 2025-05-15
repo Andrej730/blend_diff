@@ -1,4 +1,5 @@
 import struct
+from functools import cache
 from blender_asset_tracer import blendfile
 from collections import defaultdict
 from typing import Union, NamedTuple
@@ -166,3 +167,30 @@ class BlendPatch:
                 block.set(inverse_.path, block_item_index=inverse_.block_item_index, value=0)
                 i += 1
         print(f"{i} homeless address references nullified.")
+
+    @staticmethod
+    def nullify_session_uids(bf: blendfile.BlendFile) -> None:
+        """Nullify 'session_uid' field for all ID file-blocks.
+
+        'session_uid' is reset every time you open blend-file,
+        creating a diff noise between files.
+
+        Warning. Use for diff-checks only.
+        Nullifying all session uids, or setting them all
+        to some other number, e.g. '1', is crashing Blender.
+        """
+        is_id_block_ = cache(is_id_block)
+        i = 0
+        for b in bf.blocks:
+            if not is_id_block_(bf, b.sdna_index):
+                continue
+            i += 1
+            b.set((b"id", b"session_uid"), 0)
+        print(f"{i} ID file-blocks have session_uid nullified.")
+
+
+def is_id_block(bf: blendfile.BlendFile, sdna_index: int) -> bool:
+    field = bf.structs[sdna_index]._fields_by_name.get(b"id", None)
+    if field is None:
+        return False
+    return field.dna_type.dna_type_id == b"ID"
