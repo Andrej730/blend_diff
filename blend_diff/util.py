@@ -124,7 +124,17 @@ class BlendFileInverses:
         print(f"Orphaned file-blocks: {len(orphaned)}.")
 
         # Pointers without file-blocks.
-        homeless_addresses = [p for p in inverses if p not in bf.block_from_addr]
+        # Build address book as pointers may point to specific file-block items.
+        # Happens very rarily though.
+        address_book: set[int] = set()
+        for block in bf.blocks:
+            addr_old = block.addr_old
+            item_size = block.size // block.count
+            for i in range(block.count):
+                addr = addr_old + i * item_size
+                address_book.add(addr)
+
+        homeless_addresses = [p for p in inverses if p not in address_book]
         self.homeless_addresses = homeless_addresses
         homeless_references = sum(len(inverses[p]) for p in homeless_addresses)
         print(f"Homeless addresses: {len(homeless_addresses)} ({homeless_references} references).")
